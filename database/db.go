@@ -12,7 +12,7 @@ import (
 var DB *mongo.Database
 
 func ConnectDatabase() {
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017") // Cambia esto si usas una DB en la nube
+	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
 	client, err := mongo.NewClient(clientOptions)
 	if err != nil {
 		log.Fatal("❌ Error al crear el cliente de MongoDB:", err)
@@ -26,7 +26,14 @@ func ConnectDatabase() {
 		log.Fatal("❌ Error al conectar a MongoDB:", err)
 	}
 
-	DB = client.Database("ticket_system") // Nombre de la base de datos
+	DB = client.Database("ticket_system")
 
-	log.Println("✅ Conectado a MongoDB correctamente.")
+	// Crear índices para usuarios
+	userCollection := DB.Collection("users")
+	_, err = userCollection.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    map[string]interface{}{"email": 1},
+		Options: options.Index().SetUnique(true), // Asegura que los emails sean únicos
+	})
+
+	log.Println("✅ Base de datos conectada y migrada correctamente.")
 }
