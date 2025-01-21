@@ -2,7 +2,10 @@ package controllers
 
 import (
 	"context"
+	"log"
 	"net/http"
+	"os"
+	"strings"
 	"ticket-system/database"
 	"ticket-system/models"
 	"ticket-system/utils"
@@ -12,11 +15,17 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
-var userCollection = database.DB.Collection("users")
-var jwtSecret = []byte("supersecretkey") // ⚠️ Cambia esto en producción y usa variables de entorno
+var userCollection *mongo.Collection
+
+func InitAuthController() {
+	userCollection = database.DB.Collection("users")
+}
+
+var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 // Estructura de credenciales para login
 type LoginRequest struct {
@@ -36,7 +45,21 @@ type LoginRequest struct {
 func Register(c *gin.Context) {
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
+		log.Println("🔴 Error en ShouldBindJSON:", err)
 		c.JSON(http.StatusBadRequest, utils.StandardResponse{Message: "Datos inválidos", Error: err.Error()})
+		return
+	}
+
+	// 📌 Verificar si los datos se están recibiendo correctamente
+	log.Println("🔵 Datos recibidos:", user)
+
+	// Normalizar email en minúsculas
+	user.Email = strings.ToLower(user.Email)
+
+	// 📌 Verificar si la contraseña está vacía
+	if user.Password == "" {
+		log.Println("🔴 Error: La contraseña no fue enviada correctamente en la solicitud")
+		c.JSON(http.StatusBadRequest, utils.StandardResponse{Message: "La contraseña es obligatoria"})
 		return
 	}
 
@@ -78,19 +101,28 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// Normalizar email en minúsculas
+	loginReq.Email = strings.ToLower(loginReq.Email)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	var user models.User
 	err := userCollection.FindOne(ctx, bson.M{"email": loginReq.Email}).Decode(&user)
 	if err != nil {
+		log.Println("🔴 Usuario no encontrado en la base de datos:", loginReq.Email)
 		c.JSON(http.StatusUnauthorized, utils.StandardResponse{Message: "Credenciales incorrectas"})
 		return
 	}
 
-	// Verificar contraseña
+	// Imprimir hash y contraseña ingresada
+	log.Println("🔵 Hash en BD:", user.Password)
+	log.Println("🔵 Contraseña ingresada:", loginReq.Password)
+
+	// Comparar contraseñas con bcrypt
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginReq.Password))
 	if err != nil {
+		log.Println("🔴 Error al comparar contraseñas:", err)
 		c.JSON(http.StatusUnauthorized, utils.StandardResponse{Message: "Credenciales incorrectas"})
 		return
 	}
