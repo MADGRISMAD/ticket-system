@@ -1,0 +1,171 @@
+basePath: /
+definitions:
+  models.Ticket:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+    type: object
+  utils.StandardResponse:
+    properties:
+      error:
+        description: Si hay error, se agrega; si no, se omite
+        type: string
+      message:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API para gestionar tickets usando Gin y MongoDB
+  title: Ticket System API
+  version: "1.0"
+paths:
+  /tickets/:
+    get:
+      consumes:
+      - application/json
+      description: Devuelve una lista de todos los tickets almacenados en la base
+        de datos
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Ticket'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.StandardResponse'
+      summary: Obtener todos los tickets
+      tags:
+      - Tickets
+    post:
+      consumes:
+      - application/json
+      description: Crea un nuevo ticket en la base de datos
+      parameters:
+      - description: Datos del Ticket
+        in: body
+        name: ticket
+        required: true
+        schema:
+          $ref: '#/definitions/models.Ticket'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Ticket'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.StandardResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.StandardResponse'
+      summary: Crear un ticket
+      tags:
+      - Tickets
+  /tickets/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Elimina un ticket de la base de datos
+      parameters:
+      - description: ID del Ticket
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.StandardResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.StandardResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.StandardResponse'
+      summary: Eliminar un ticket
+      tags:
+      - Tickets
+    get:
+      consumes:
+      - application/json
+      description: Devuelve un ticket específico según su ID
+      parameters:
+      - description: ID del Ticket
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Ticket'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.StandardResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.StandardResponse'
+      summary: Obtener un ticket por ID
+      tags:
+      - Tickets
+    put:
+      consumes:
+      - application/json
+      description: Actualiza los datos de un ticket existente
+      parameters:
+      - description: ID del Ticket
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Datos actualizados del Ticket
+        in: body
+        name: ticket
+        required: true
+        schema:
+          $ref: '#/definitions/models.Ticket'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.StandardResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.StandardResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.StandardResponse'
+      summary: Actualizar un ticket
+      tags:
+      - Tickets
+swagger: "2.0"
